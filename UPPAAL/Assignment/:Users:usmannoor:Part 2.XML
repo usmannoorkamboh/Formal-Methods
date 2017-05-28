@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>
+
+        const int iterations = 100;
+
+        const int buffer_size =16;
+
+        int buffer[buffer_size];
+
+
+        //Names of semaphores
+        const int empty_slot = 0;
+        const int full_slot = 1;
+
+
+        //Names of processes
+        const int producer = 0;
+        const int consumer = 1;
+
+
+        const int total_semaphores = 3; //Number of semaphores
+        const int total_processes = 2; //Number of processes
+
+        chan semWait[total_semaphores][total_processes];
+        chan semSignal[total_semaphores][total_processes];
+        chan semGo[total_semaphores][total_processes];
+
+    </declaration>
+	<template>
+		<name x="5" y="5">Consumer</name>
+		<declaration>
+
+            int i = 0;
+            int out = 0;
+
+            void consume()
+            {
+            int c = buffer[out];
+            out = (out + 1) % buffer_size;
+            i ++;
+            }
+        </declaration>
+		<location id="id0" x="110" y="-17">
+			<name x="54" y="-41">DONE</name>
+		</location>
+		<location id="id1" x="340" y="-17">
+		</location>
+		<location id="id2" x="850" y="-17">
+		</location>
+		<location id="id3" x="850" y="153">
+			<name x="874" y="137">CS</name>
+		</location>
+		<location id="id4" x="620" y="272">
+		</location>
+		<init ref="id1"/>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="guard" x="297" y="-59">i &gt;= iterations</label>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="348" y="110">semSignal[empty_slot][consumer]!</label>
+			<nail x="340" y="272"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="guard" x="586" y="-51">i &lt; iterations</label>
+			<label kind="synchronisation" x="535" y="-68">semWait[full_slot][consumer]!</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="858" y="51">semGo[full_slot][consumer]?</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="assignment" x="663" y="187">consume()</label>
+		</transition>
+	</template>
+	<template>
+		<name>Semaphore</name>
+		<parameter>const int id, const int queue_size, const int initial_value</parameter>
+		<declaration>
+
+            //The value of the semaphore
+
+            int count = initial_value;
+            
+            //The queue of the semaphore
+            //value -1 denotes an empty array entry
+            int[-1,total_processes-1] queue[queue_size];
+            //An auxiliary variable used to temporarily store process id
+            meta int[0,total_processes-1] q;
+
+            void initialize ()
+            {
+            for (i : int[0,queue_size-1])
+            {queue[i] = -1;}
+            }
+
+            void deQueue ()
+            {
+            for (i : int[1,queue_size-1])
+            queue[i-1] = queue[i];
+            queue[queue_size-1] = -1;
+            }
+
+            void enQueue (int p)
+            {
+            int i = 0;
+            while (queue[i]&gt;=0){i++;};
+            queue[i]=p;
+            }
+
+            int[0,total_processes-1] headQueue ( )
+            {
+            return queue[0];
+            }
+
+            bool isFull ( )
+            {
+            for (i : int[0,queue_size-1])
+            {
+            if (queue[i]==-1) {return false;}
+            }
+            return true;
+            }
+        </declaration>
+		<location id="id5" x="314" y="-17">
+			<committed/>
+		</location>
+		<location id="id6" x="756" y="382">
+			<committed/>
+		</location>
+		<location id="id7" x="204" y="25">
+			<name x="178" y="-9">overflow</name>
+		</location>
+		<location id="id8" x="480" y="192">
+		</location>
+		<init ref="id5"/>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id8"/>
+			<label kind="assignment" x="331" y="-34">initialize()</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id8"/>
+			<label kind="select" x="77" y="187">p:int[0,total_processes-1]</label>
+			<label kind="guard" x="77" y="204">count&gt;=0</label>
+			<label kind="synchronisation" x="77" y="221">semSignal[id][p]?</label>
+			<label kind="assignment" x="77" y="238">count++</label>
+			<nail x="263" y="187"/>
+			<nail x="263" y="219"/>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id6"/>
+			<label kind="select" x="637" y="119">p:int[0,total_processes-1]</label>
+			<label kind="guard" x="637" y="135">count&gt;0</label>
+			<label kind="synchronisation" x="637" y="151">semWait[id][p]?</label>
+			<label kind="assignment" x="637" y="167">count--,q=p</label>
+			<nail x="756" y="195"/>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id7"/>
+			<label kind="select" x="93" y="68">p:int[0,total_processes-1]</label>
+			<label kind="guard" x="144" y="85">count&lt;=0 &amp;&amp; isFull()</label>
+			<label kind="synchronisation" x="212" y="102">semWait[id][p]?</label>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="595" y="255">semGo[id][q]!</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id6"/>
+			<label kind="select" x="280" y="340">p:int[0,total_processes-1]</label>
+			<label kind="guard" x="280" y="357">count&lt;0</label>
+			<label kind="synchronisation" x="280" y="374">semSignal[id][p]?</label>
+			<label kind="assignment" x="280" y="391">count++,q=headQueue(),deQueue()</label>
+			<nail x="484" y="382"/>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id8"/>
+			<label kind="select" x="484" y="-67">p:int[0,total_processes-1]</label>
+			<label kind="guard" x="484" y="-51">count&lt;=0 &amp;&amp; not isFull()</label>
+			<label kind="synchronisation" x="484" y="-35">semWait[id][p]?</label>
+			<label kind="assignment" x="484" y="-19">count--,enQueue(p)</label>
+			<nail x="467" y="0"/>
+			<nail x="499" y="0"/>
+		</transition>
+	</template>
+	<template>
+		<name x="5" y="5">Producer</name>
+		<declaration>
+
+            int i = 0;
+            int in = 0;
+
+            void produce()
+            {
+            // cout &lt;&lt; "P";
+            buffer[in] = 900 + in;
+            in = (in + 1) % buffer_size;
+            i ++;
+            }
+        </declaration>
+		<location id="id9" x="187" y="-17">
+			<name x="123" y="-25">DONE</name>
+		</location>
+		<location id="id10" x="391" y="-17">
+		</location>
+		<location id="id11" x="782" y="-17">
+		</location>
+		<location id="id12" x="782" y="153">
+			<name x="798" y="121">CS</name>
+		</location>
+		<location id="id13" x="637" y="272">
+		</location>
+		<init ref="id10"/>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id9"/>
+			<label kind="guard" x="331" y="-59">i &gt;= iterations</label>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="170" y="119">semSignal[full_slot][producer]!</label>
+			<nail x="391" y="272"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="guard" x="544" y="-42">i &lt; iterations</label>
+			<label kind="synchronisation" x="484" y="-59">semWait[empty_slot][producer]!</label>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="790" y="42">semGo[empty_slot][producer]?</label>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id13"/>
+			<label kind="assignment" x="637" y="195">produce()</label>
+		</transition>
+	</template>
+	<system>
+
+        sem_empty_slot = Semaphore(empty_slot, buffer_size, buffer_size); // Queue starts empty
+        sem_full_slot = Semaphore(full_slot, buffer_size, 0);
+
+        cons = Consumer();
+        prod = Producer();
+
+
+        //Edit system definition.
+        system cons, prod, sem_empty_slot, sem_full_slot;
+    </system>
+	<queries>
+	</queries>
+</nta>

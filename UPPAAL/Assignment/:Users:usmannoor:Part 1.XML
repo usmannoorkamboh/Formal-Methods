@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+
+int[0,1] req1,req2;
+int[1,2] turn;</declaration>
+	<template>
+		<name x="5" y="5">process1</name>
+		<declaration>// Place local declarations here.</declaration>
+		<location id="id0" x="-654" y="-76">
+			<name x="-664" y="-110">cs</name>
+		</location>
+		<location id="id1" x="-238" y="-76">
+			<name x="-248" y="-110">wait</name>
+		</location>
+		<location id="id2" x="-654" y="-408">
+			<name x="-664" y="-442">idle</name>
+		</location>
+		<location id="id3" x="-238" y="-408">
+			<name x="-248" y="-442">want</name>
+		</location>
+		<init ref="id2"/>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id2"/>
+			<label kind="assignment" x="-650" y="-242">req1 := 0</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-476" y="8">req2 == 0</label>
+			<nail x="-340" y="0"/>
+			<nail x="-544" y="0"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-467" y="-187">turn == 1</label>
+			<nail x="-348" y="-153"/>
+			<nail x="-535" y="-153"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="-238" y="-242">turn := 2</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="assignment" x="-484" y="-433">req1 := 1</label>
+		</transition>
+	</template>
+	<template>
+		<name>process2</name>
+		<location id="id4" x="85" y="170">
+			<name x="75" y="136">cs</name>
+		</location>
+		<location id="id5" x="505" y="171">
+			<name x="495" y="137">wait</name>
+		</location>
+		<location id="id6" x="85" y="-161">
+			<name x="75" y="-195">idle</name>
+		</location>
+		<location id="id7" x="505" y="-161">
+			<name x="495" y="-195">want</name>
+		</location>
+		<init ref="id6"/>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="assignment" x="93" y="5">req2 := 0</label>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id4"/>
+			<label kind="guard" x="267" y="255">req1 == 0</label>
+			<nail x="403" y="247"/>
+			<nail x="199" y="247"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id4"/>
+			<label kind="guard" x="276" y="60">turn == 2</label>
+			<nail x="395" y="94"/>
+			<nail x="208" y="94"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id5"/>
+			<label kind="assignment" x="505" y="5">turn := 1</label>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id7"/>
+			<label kind="assignment" x="259" y="-186">req2 := 1</label>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+
+
+// List one or more processes to be composed into a system.
+system process1,process2;
+    </system>
+	<queries>
+	</queries>
+</nta>
